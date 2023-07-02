@@ -3,18 +3,21 @@ from django.contrib.auth.models import AbstractUser
 
 from .managers import MyUserManager
 
+
 class MyUser(AbstractUser, models.Model):
     gender_choices = (
         ('M', ("Мужчина")),
         ('F', ("Женщина"))
     )
-    
+
     username = None
     first_name = models.CharField(verbose_name='Имя', max_length=150)
     last_name = models.CharField(verbose_name='Фамилия', max_length=150)
     email = models.EmailField(verbose_name='Email', unique=True)
-    gender = models.CharField(choices=gender_choices, max_length=7, verbose_name='Пол')
-    photo = models.ImageField(verbose_name='Аватарка', upload_to='user_photos/')
+    gender = models.CharField(choices=gender_choices,
+                              max_length=7, verbose_name='Пол')
+    photo = models.ImageField(verbose_name='Аватарка',
+                              upload_to='user_photos/')
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
