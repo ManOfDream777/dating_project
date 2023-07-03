@@ -28,7 +28,8 @@ class CreateUserAPIView(CreateAPIView):
         extra_fields = {
             'first_name': serializer.validated_data.get('first_name'),
             'last_name': serializer.validated_data.get('last_name'),
-            'gender': serializer.validated_data.get('gender')
+            'gender': serializer.validated_data.get('gender'),
+            'photo': serializer.validated_data.get('photo')
         }
         user = MyUser.objects.create_user(
             email=serializer.validated_data.get('email'),

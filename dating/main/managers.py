@@ -11,7 +11,8 @@ class MyUserManager(BaseUserManager):
         name = extra_fields.get('first_name')
         surname = extra_fields.get('last_name')
         gender = extra_fields.get('gender')
-        if not name and not surname and not gender:
+        photo = extra_fields.get('photo')
+        if not name and not surname and not gender and not photo:
             raise ValueError("The given credentials must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)

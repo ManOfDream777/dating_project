@@ -1,10 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 
 from .managers import MyUserManager
 
 
 class MyUser(AbstractUser, models.Model):
+
     gender_choices = (
         ('M', ("Мужчина")),
         ('F', ("Женщина"))
@@ -21,7 +28,7 @@ class MyUser(AbstractUser, models.Model):
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['last_name', 'first_name', 'gender',]
+    REQUIRED_FIELDS = ['last_name', 'first_name', 'gender', 'photo']
 
     objects = MyUserManager()
 
@@ -32,3 +39,16 @@ class MyUser(AbstractUser, models.Model):
 
     def get_full_name(self) -> str:
         return f'{self.last_name} {self.first_name[0]}'
+
+@receiver(post_save, sender=MyUser)
+def add_watermark(sender, instance: MyUser, created, **kwargs):
+    if created:
+        photo = Image.open(instance.photo.path)
+    
+        drawing = ImageDraw.Draw(photo)
+    
+        black = (3, 8, 12)
+        font = ImageFont.load_default()
+        drawing.text((300, 300), 'watermark', fill=black, font=font)
+
+        photo.save(instance.photo.path)
