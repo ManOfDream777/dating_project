@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from main.models import MyUser
+from main.models import MyUser, Sympathie
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -33,3 +33,10 @@ class LoginSerializer(serializers.Serializer):
 
     class Meta:
         fields = ('email', 'password')
+
+
+class SympathieSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Sympathie
+        exclude = ('is_mutual', )

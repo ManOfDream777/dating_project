@@ -1,13 +1,15 @@
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login
+from django.http.response import Http404
 
-from .serializers import CreateUserSerializer, LoginSerializer
-from main.models import MyUser
+from .serializers import CreateUserSerializer, LoginSerializer, SympathieSerializer
+from main.models import MyUser, Sympathie
 
 
 class CreateUserAPIView(CreateAPIView):
@@ -54,3 +56,25 @@ class LoginAPIView(APIView):
             login(request, user)
             return redirect('main:homepage')
         return Response(status=401, data={'error': 'Bad credentials'})
+
+class SympathieMatch(ListCreateAPIView):
+    serializer_class = SympathieSerializer
+    permission_classes = (IsAuthenticated, )
+    queryset = Sympathie.objects.none()
+
+    def get(self, request, *args, **kwargs):
+        id_exists = MyUser.objects.filter(id = kwargs.get('id'))
+        if id_exists.exists():
+            return super().get(request, *args, **kwargs)
+        raise Http404()
+
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        u2 = MyUser.objects.filter(id=kwargs.get('id')).first()
+        if u2 and u2 != self.request.user:
+            status = Sympathie.create_if_not_exists(u1=self.request.user, u2=u2)
+            if status:
+                return Response(status=201, data={'email': u2.email})
+            return Response(status=201)
+        return Response(status=400, data=serializer.errors)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import MyUser
+from .models import MyUser, Sympathie
 from .forms import MyUserCreationForm, MyUserChangeForm
 
 class MyUserAdmin(UserAdmin):
@@ -43,4 +43,8 @@ class MyUserAdmin(UserAdmin):
         "user_permissions",
     )
 
+class SympathieAdmin(admin.ModelAdmin):
+    model = Sympathie
+
 admin.site.register(MyUser, MyUserAdmin)
+admin.site.register(Sympathie, SympathieAdmin)
