@@ -1,4 +1,4 @@
-from rest_framework.generics import CreateAPIView, ListCreateAPIView
+from rest_framework.generics import CreateAPIView, ListCreateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -8,7 +8,10 @@ from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login
 from django.http.response import Http404
 
-from .serializers import CreateUserSerializer, LoginSerializer, SympathieSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+
+from .serializers import CreateUserSerializer, LoginSerializer, SympathieSerializer, MyUserListSerializer
+from .filters import UserFilter
 from main.models import MyUser, Sympathie
 
 
@@ -78,3 +81,12 @@ class SympathieMatch(ListCreateAPIView):
                 return Response(status=201, data={'email': u2.email})
             return Response(status=201)
         return Response(status=400, data=serializer.errors)
+    
+class UserListAPIView(ListAPIView):
+    serializer_class = MyUserListSerializer
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = UserFilter
+    
+    def get_queryset(self):
+        return MyUser.objects.exclude(id = self.request.user.id)
+    

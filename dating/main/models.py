@@ -81,12 +81,12 @@ class Sympathie(models.Model):
         return f'Симпатия между {self.user1.get_full_name()} и {self.user2.get_full_name()}'
 
     @staticmethod
-    def dialog_exists(u1: MyUser, u2: MyUser) -> Optional[Any]:
+    def sympathie_exists(u1: MyUser, u2: MyUser) -> Optional[Any]:
         return Sympathie.objects.filter(Q(user1=u1, user2=u2) | Q(user1=u2, user2=u1)).first()
 
     @staticmethod
     def create_if_not_exists(u1: MyUser, u2: MyUser) -> bool:
-        res = Sympathie.dialog_exists(u1, u2)
+        res = Sympathie.sympathie_exists(u1, u2)
         if not res:
             Sympathie.objects.create(user1=u1, user2=u2)
             return False
