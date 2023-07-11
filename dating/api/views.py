@@ -7,12 +7,14 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login
 from django.http.response import Http404
+from django.db.models import F
 
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .serializers import CreateUserSerializer, LoginSerializer, SympathieSerializer, MyUserListSerializer
 from .filters import UserFilter
 from main.models import MyUser, Sympathie
+from .services.services import get_distance_between_points
 
 
 class CreateUserAPIView(CreateAPIView):
@@ -45,20 +47,23 @@ class CreateUserAPIView(CreateAPIView):
             return True
         return False
 
+
 class LoginAPIView(APIView):
 
     def post(self, request: Request, *args, **kwargs) -> Response:
 
         if request.user.is_authenticated:
             return redirect('main:homepage')
-        
-        serializer = LoginSerializer(data = request.data)
+
+        serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = authenticate(email = serializer.validated_data.get('email'), password = serializer.validated_data.get('password'))
+        user = authenticate(email=serializer.validated_data.get(
+            'email'), password=serializer.validated_data.get('password'))
         if user:
             login(request, user)
             return redirect('main:homepage')
         return Response(status=401, data={'error': 'Bad credentials'})
+
 
 class SympathieMatch(ListCreateAPIView):
     serializer_class = SympathieSerializer
@@ -66,7 +71,7 @@ class SympathieMatch(ListCreateAPIView):
     queryset = Sympathie.objects.none()
 
     def get(self, request, *args, **kwargs):
-        id_exists = MyUser.objects.filter(id = kwargs.get('id'))
+        id_exists = MyUser.objects.filter(id=kwargs.get('id'))
         if id_exists.exists():
             return super().get(request, *args, **kwargs)
         raise Http404()
@@ -76,17 +81,30 @@ class SympathieMatch(ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         u2 = MyUser.objects.filter(id=kwargs.get('id')).first()
         if u2 and u2 != self.request.user:
-            status = Sympathie.create_if_not_exists(u1=self.request.user, u2=u2)
+            status = Sympathie.create_if_not_exists(
+                u1=self.request.user, u2=u2)
             if status:
                 return Response(status=201, data={'email': u2.email})
             return Response(status=201)
         return Response(status=400, data=serializer.errors)
-    
+
+
 class UserListAPIView(ListAPIView):
     serializer_class = MyUserListSerializer
     filter_backends = (DjangoFilterBackend, )
     filterset_class = UserFilter
-    
+
     def get_queryset(self):
-        return MyUser.objects.exclude(id = self.request.user.id)
-    
+        query_distance = self.request.query_params.get('distance', None)
+        if query_distance:
+            query_distance = float(query_distance)
+            qs = MyUser.objects.exclude(id=self.request.user.id).values(
+                'id', 'longitude', 'latitude')
+            user_ids = []
+            for user in qs:
+                distance, id = get_distance_between_points((self.request.user.latitude, self.request.user.longitude), (user.get(
+                    'latitude'), user.get('longitude'))), user.get('id')
+                if distance <= query_distance:
+                    user_ids.append(id)
+            return MyUser.objects.filter(id__in=user_ids)
+        return MyUser.objects.exclude(id=self.request.user.id)

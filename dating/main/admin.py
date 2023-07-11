@@ -3,13 +3,15 @@ from django.contrib.auth.admin import UserAdmin
 from .models import MyUser, Sympathie
 from .forms import MyUserCreationForm, MyUserChangeForm
 
+
 class MyUserAdmin(UserAdmin):
     model = MyUser
     add_form = MyUserCreationForm
     list_display = ('email', 'last_name', 'first_name',)
     ordering = ('last_name', 'first_name',)
     fieldsets = (
-        (None, {"fields": ('email', 'first_name', 'last_name', 'gender', 'photo', 'password')}),
+        (None, {"fields": ('email', 'first_name', 'last_name',
+         'gender', 'photo', 'latitude', 'longitude', 'password')}),
         (
             ("Права доступа"),
             {
@@ -34,7 +36,6 @@ class MyUserAdmin(UserAdmin):
         ),
     )
     form = MyUserChangeForm
-    # change_password_form = AdminPasswordChangeForm
     list_filter = ("last_name", "gender", "is_staff", "groups")
     search_fields = ("first_name", "last_name", "email", "gender")
     ordering = ("last_name", "first_name",)
@@ -43,8 +44,10 @@ class MyUserAdmin(UserAdmin):
         "user_permissions",
     )
 
+
 class SympathieAdmin(admin.ModelAdmin):
     model = Sympathie
+
 
 admin.site.register(MyUser, MyUserAdmin)
 admin.site.register(Sympathie, SympathieAdmin)

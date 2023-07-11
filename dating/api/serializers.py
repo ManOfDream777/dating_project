@@ -41,8 +41,9 @@ class SympathieSerializer(serializers.ModelSerializer):
         model = Sympathie
         exclude = ('is_mutual', )
 
+
 class MyUserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MyUser
-        fields = ('first_name' ,'last_name', 'gender', 'photo')
+        fields = ('first_name', 'last_name', 'gender', 'photo',)

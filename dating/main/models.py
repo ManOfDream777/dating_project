@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Any
 
 from django.db import models
 from django.db.models import Q
@@ -17,12 +17,21 @@ from .managers import MyUserManager
 from dating.settings import EMAIL_HOST_USER as host
 
 
-
 class MyUser(AbstractUser, models.Model):
 
     gender_choices = (
         ('M', ("Мужчина")),
         ('F', ("Женщина"))
+    )
+
+    DISTANCE_CHOICES = (
+        ('1', '1км'),
+        ('3', '3км'),
+        ('5', '5км'),
+        ('10', '10км'),
+        ('100', '100км'),
+        ('300', '300км'),
+        ('300+', '300+км'),
     )
 
     username = None
@@ -33,6 +42,8 @@ class MyUser(AbstractUser, models.Model):
                               max_length=7, verbose_name='Пол')
     photo = models.ImageField(verbose_name='Аватарка',
                               upload_to='user_photos/')
+    latitude = models.FloatField(verbose_name='Широта', default=0)
+    longitude = models.FloatField(verbose_name='Долгота', default=0)
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
@@ -48,25 +59,30 @@ class MyUser(AbstractUser, models.Model):
     def get_full_name(self) -> str:
         return f'{self.last_name} {self.first_name[0]}'
 
+
 @receiver(post_save, sender=MyUser)
 def add_watermark(sender, instance: MyUser, created, **kwargs):
     if created:
         photo = Image.open(instance.photo.path)
-    
+
         drawing = ImageDraw.Draw(photo)
-    
+
         black = (3, 8, 12)
         font = ImageFont.load_default()
         drawing.text((300, 300), 'watermark', fill=black, font=font)
 
         photo.save(instance.photo.path)
 
+
 class Sympathie(models.Model):
     TEMPLATE_NAME = 'email/email_notifications.txt'
 
-    user1 = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name='Инициатор симпатии', related_name='sender')
-    user2 = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name='Получатель симпатии', related_name='receiver')
-    is_mutual = models.BooleanField(verbose_name='Взаимная симпатия', default=False)
+    user1 = models.ForeignKey(MyUser, on_delete=models.CASCADE,
+                              verbose_name='Инициатор симпатии', related_name='sender')
+    user2 = models.ForeignKey(MyUser, on_delete=models.CASCADE,
+                              verbose_name='Получатель симпатии', related_name='receiver')
+    is_mutual = models.BooleanField(
+        verbose_name='Взаимная симпатия', default=False)
 
     class Meta:
         verbose_name = 'Симпатия'
@@ -81,7 +97,7 @@ class Sympathie(models.Model):
         return f'Симпатия между {self.user1.get_full_name()} и {self.user2.get_full_name()}'
 
     @staticmethod
-    def sympathie_exists(u1: MyUser, u2: MyUser) -> Optional[Any]:
+    def sympathie_exists(u1: MyUser, u2: MyUser) -> object | None:
         return Sympathie.objects.filter(Q(user1=u1, user2=u2) | Q(user1=u2, user2=u1)).first()
 
     @staticmethod
@@ -91,13 +107,15 @@ class Sympathie(models.Model):
             Sympathie.objects.create(user1=u1, user2=u2)
             return False
         else:
-            sympathie = Sympathie.objects.get(Q(user1=u1, user2=u2) | Q(user1=u2, user2=u1))
+            sympathie = Sympathie.objects.get(
+                Q(user1=u1, user2=u2) | Q(user1=u2, user2=u1))
             sympathie.is_mutual = True
             sympathie.save()
             return True
 
     def send_emails_to_users(self) -> None:
-        html_msg = render_to_string(self.TEMPLATE_NAME, context={'body': f'Вы понравились {self.user1.first_name}! Почта участника: {self.user1.email}', 'site_name': 'new-tinder 3.0', 'site_domain': 'http://test.ru'})
+        html_msg = render_to_string(self.TEMPLATE_NAME, context={
+                                    'body': f'Вы понравились {self.user1.first_name}! Почта участника: {self.user1.email}', 'site_name': 'new-tinder 3.0', 'site_domain': 'http://test.ru'})
         plain_message = strip_tags(html_msg)
         send_mail(
             subject='Симпатия',
@@ -107,7 +125,8 @@ class Sympathie(models.Model):
             html_message=html_msg
         )
 
-        html_msg = render_to_string(self.TEMPLATE_NAME, context={'body': f'Вы понравились {self.user2.first_name}! Почта участника: {self.user2.email}', 'site_name': 'new-tinder 3.0', 'site_domain': 'http://test.ru'})
+        html_msg = render_to_string(self.TEMPLATE_NAME, context={
+                                    'body': f'Вы понравились {self.user2.first_name}! Почта участника: {self.user2.email}', 'site_name': 'new-tinder 3.0', 'site_domain': 'http://test.ru'})
         plain_message = strip_tags(html_msg)
         send_mail(
             subject='Симпатия',
