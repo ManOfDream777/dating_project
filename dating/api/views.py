@@ -65,16 +65,16 @@ class LoginAPIView(APIView):
         return Response(status=401, data={'error': 'Bad credentials'})
 
 
-class SympathieMatch(ListCreateAPIView):
+class SympathieMatch(CreateAPIView):
     serializer_class = SympathieSerializer
     permission_classes = (IsAuthenticated, )
     queryset = Sympathie.objects.none()
 
-    def get(self, request, *args, **kwargs):
-        id_exists = MyUser.objects.filter(id=kwargs.get('id'))
-        if id_exists.exists():
-            return super().get(request, *args, **kwargs)
-        raise Http404()
+    # def get(self, request, *args, **kwargs):
+    #     id_exists = MyUser.objects.filter(id=kwargs.get('id'))
+    #     if id_exists.exists():
+    #         return super().get(request, *args, **kwargs)
+    #     return Response(status=404, data={'error': 'Пользователь не найден'})
 
     def post(self, request: Request, *args, **kwargs) -> Response:
         serializer = self.serializer_class(data=request.data)

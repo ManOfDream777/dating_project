@@ -39,7 +39,7 @@ class SympathieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sympathie
-        exclude = ('is_mutual', )
+        exclude = ('is_mutual', 'user1')
 
 
 class MyUserListSerializer(serializers.ModelSerializer):
